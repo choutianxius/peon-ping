@@ -107,6 +107,7 @@ Edit `$CLAUDE_CONFIG_DIR/hooks/peon-ping/config.json` (default: `~/.claude/hooks
 | `sc_kerrigan` | Sarah Kerrigan (StarCraft) | "I gotcha", "What now?", "Easily amused, huh?" | [@garysheng](https://github.com/garysheng) |
 | `dota2_axe` | Axe (Dota 2) | "Axe is ready!", "Axe-actly!", "Come and get it!" | [@x-n2o](https://github.com/x-n2o) |
 | `glados` | GLaDOS (Portal) | "Oh, it's you.", "You monster.", "Your entire team is dead." | [@DoubleGremlin181](https://github.com/DoubleGremlin181) |
+| `hd2_helldiver` | Helldiver (Helldivers 2) | "For democracy!", "How 'bout a nice cup of Liber-tea?", "Spreading freedom" | [@ZachTaylor99](https://github.com/ZachTaylor99) |
 | `molag_bal` | Molag Bal (Elder Scrolls) | "Speak.", "Crush him.", "You're mine now." | [@lloydaf](https://github.com/lloydaf) |
 | `sheogorath` | Sheogorath (Elder Scrolls) | "Greetings.", "Good choice.", "Boring, boring, boring." | [@lloydaf](https://github.com/lloydaf) |
 | `sc_terran` | Terran Units Mixed (StarCraft) | SCV, Firebat, Medic, Siege Tank, Science Vessel | [@workdd](https://github.com/workdd) |
