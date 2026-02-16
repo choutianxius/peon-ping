@@ -186,7 +186,7 @@ peon trainer status          # check progress
 
 ### How it works
 
-Trainer reminders piggyback on your coding session — every ~20 minutes of active coding, you'll hear the peon yelling at you to do reps. No background daemon needed. Log your reps with `peon trainer log`, and progress resets automatically at midnight.
+Trainer reminders piggyback on your coding session. When you start a new session, the peon immediately encourages you to start strong with pushups before you write any code. Then every ~20 minutes of active coding, you'll hear the peon yelling at you to do more reps. No background daemon needed. Log your reps with `peon trainer log`, and progress resets automatically at midnight.
 
 ### Commands
 
@@ -199,15 +199,25 @@ Trainer reminders piggyback on your coding session — every ~20 minutes of acti
 | `peon trainer goal <n>` | Set goal for all exercises |
 | `peon trainer goal <exercise> <n>` | Set goal for one exercise |
 
+### Claude Code skill
+
+In Claude Code, you can log reps without leaving your conversation:
+
+```
+/peon-ping-log 25 pushups
+/peon-ping-log 30 squats
+```
+
 ### Custom voice lines
 
 Drop your own audio files into `~/.claude/hooks/peon-ping/trainer/sounds/`:
 
 ```
-trainer/sounds/remind/     # reminder lines ("Something need doing? YES. PUSHUPS.")
-trainer/sounds/log/        # acknowledgment ("Work work! Muscles getting bigger maybe!")
-trainer/sounds/complete/   # celebration ("Zug zug! Human finish all reps!")
-trainer/sounds/slacking/   # disappointment ("Peon very disappointed.")
+trainer/sounds/session_start/  # session greeting ("Pushups first, code second! Zug zug!")
+trainer/sounds/remind/         # reminder lines ("Something need doing? YES. PUSHUPS.")
+trainer/sounds/log/            # acknowledgment ("Work work! Muscles getting bigger maybe!")
+trainer/sounds/complete/       # celebration ("Zug zug! Human finish all reps!")
+trainer/sounds/slacking/       # disappointment ("Peon very disappointed.")
 ```
 
 Update `trainer/manifest.json` to register your sound files.

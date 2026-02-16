@@ -1,4 +1,9 @@
 {
+  "trainer.session_start": [
+    { "file": "sounds/session_start/new_day.mp3", "label": "New day! New session! Time for pushups before coding! Peon make you strong!" },
+    { "file": "sounds/session_start/human_back.mp3", "label": "Ah, human back at computer! Before you type type type, do twenty pushups! Start session strong!" },
+    { "file": "sounds/session_start/know_the_rules.mp3", "label": "Session start! You know the rules. Pushups first, code second! Zug zug!" }
+  ],
   "trainer.remind": [
     { "file": "sounds/remind/sit_too_long.mp3", "label": "You sit too long! Peon say do pushups NOW!" },
     { "file": "sounds/remind/human_weak.mp3", "label": "Human weak! Need more squats!" },

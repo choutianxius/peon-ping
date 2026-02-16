@@ -17,8 +17,13 @@ setup() {
   mkdir -p "$TEST_DIR/trainer/sounds/log"
   mkdir -p "$TEST_DIR/trainer/sounds/complete"
 
+  mkdir -p "$TEST_DIR/trainer/sounds/session_start"
+
   cat > "$TEST_DIR/trainer/manifest.json" <<'JSON'
 {
+  "trainer.session_start": [
+    { "file": "sounds/session_start/start.mp3", "label": "Session start! Pushups first!" }
+  ],
   "trainer.remind": [
     { "file": "sounds/remind/reminder.mp3", "label": "Time for reps!" }
   ],
@@ -34,6 +39,7 @@ setup() {
 }
 JSON
 
+  touch "$TEST_DIR/trainer/sounds/session_start/start.mp3"
   touch "$TEST_DIR/trainer/sounds/remind/reminder.mp3"
   touch "$TEST_DIR/trainer/sounds/slacking/slacking.mp3"
   touch "$TEST_DIR/trainer/sounds/log/logged.mp3"
@@ -215,7 +221,7 @@ json.dump(s, open('$TEST_DIR/.state.json', 'w'))
   [ "$count" = "1" ]
 }
 
-@test "hook event skips trainer reminder on SessionStart" {
+@test "hook event fires session_start sound on SessionStart" {
   bash "$PEON_SH" trainer on
   python3 -c "
 import json, time
@@ -226,7 +232,8 @@ json.dump(s, open('$TEST_DIR/.state.json', 'w'))
   run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
   [ "$PEON_EXIT" -eq 0 ]
   count=$(afplay_call_count)
-  [ "$count" = "1" ]
+  # 2 calls: main session sound + trainer session_start sound
+  [ "$count" = "2" ]
 }
 
 @test "hook event skips trainer reminder when daily goal complete" {

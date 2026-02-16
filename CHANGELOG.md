@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0.0-alpha (2026-02-16)
+
+### Added
+- **Peon Trainer**: Pavel-style daily exercise mode — 300 pushups and 300 squats per day, tracked through your coding sessions
+- Trainer CLI: `peon trainer on/off/status/log/goal/help` subcommands
+- Trainer reminders piggyback on IDE hook events every ~20 minutes with orc peon voice lines
+- Session-start encouragement: peon immediately greets you with a workout prompt when you start a new coding session
+- 24 ElevenLabs orc voice lines across 5 categories: session_start, remind, log, complete, slacking
+- Pace-based slacking detection: past noon with less than 25% progress triggers slacking voice lines
+- Daily auto-reset at midnight
+- Configurable goals (`peon trainer goal 200`) and per-exercise goals (`peon trainer goal pushups 100`)
+- Trainer section in README with quick start guide
+
 ## v1.8.2 (2026-02-15)
 
 ### Fixed

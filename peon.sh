@@ -1905,7 +1905,7 @@ if category and not paused:
 trainer_sound = ''
 trainer_msg = ''
 trainer_cfg = cfg.get('trainer', {})
-if trainer_cfg.get('enabled', False) and event != 'SessionStart':
+if trainer_cfg.get('enabled', False):
     from datetime import date as _date
     today = _date.today().isoformat()
     trainer_state = state.get('trainer', {})
@@ -1922,19 +1922,23 @@ if trainer_cfg.get('enabled', False) and event != 'SessionStart':
         interval = trainer_cfg.get('reminder_interval_minutes', 20) * 60
         min_gap = trainer_cfg.get('reminder_min_gap_minutes', 5) * 60
         elapsed = now_ts - last_ts
-        if elapsed >= interval and elapsed >= min_gap:
+        is_session_start = (event == 'SessionStart')
+        if is_session_start or (elapsed >= interval and elapsed >= min_gap):
             trainer_manifest_path = os.path.join(peon_dir, 'trainer', 'manifest.json')
             try:
                 tm = json.load(open(trainer_manifest_path))
-                import datetime
-                hour = datetime.datetime.now().hour
-                total_reps = sum(reps.get(ex, 0) for ex in exercises)
-                total_goal = sum(exercises.values())
-                pct = total_reps / total_goal if total_goal > 0 else 1.0
-                if hour >= 12 and pct < 0.25:
-                    tcat = 'trainer.slacking'
+                if is_session_start:
+                    tcat = 'trainer.session_start'
                 else:
-                    tcat = 'trainer.remind'
+                    import datetime
+                    hour = datetime.datetime.now().hour
+                    total_reps = sum(reps.get(ex, 0) for ex in exercises)
+                    total_goal = sum(exercises.values())
+                    pct = total_reps / total_goal if total_goal > 0 else 1.0
+                    if hour >= 12 and pct < 0.25:
+                        tcat = 'trainer.slacking'
+                    else:
+                        tcat = 'trainer.remind'
                 sounds = tm.get(tcat, [])
                 if sounds:
                     pick = random.choice(sounds)
