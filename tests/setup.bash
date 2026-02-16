@@ -44,6 +44,11 @@ setup_test_env() {
         { "file": "Perm2.wav", "label": "Hmm?" }
       ]
     },
+    "resource.limit": {
+      "sounds": [
+        { "file": "Limit1.wav", "label": "More work?" }
+      ]
+    },
     "user.spam": {
       "sounds": [
         { "file": "Angry1.wav", "label": "Me busy, leave me alone!" }
@@ -54,7 +59,7 @@ setup_test_env() {
 JSON
 
   # Create dummy sound files (empty but present)
-  for f in Hello1.wav Hello2.wav Ack1.wav Done1.wav Done2.wav Error1.wav Perm1.wav Perm2.wav Angry1.wav; do
+  for f in Hello1.wav Hello2.wav Ack1.wav Done1.wav Done2.wav Error1.wav Perm1.wav Perm2.wav Limit1.wav Angry1.wav; do
     touch "$TEST_DIR/packs/peon/sounds/$f"
   done
 
@@ -90,7 +95,7 @@ JSON
   "enabled": true,
   "categories": {
     "session.start": true,
-    "task.acknowledge": true,
+    "task.acknowledge": false,
     "task.complete": true,
     "task.error": true,
     "input.required": true,

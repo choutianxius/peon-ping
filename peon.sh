@@ -1845,7 +1845,7 @@ elif event == 'PermissionRequest':
     notify_color = 'red'
     msg = project + '  \u2014  Permission needed'
 elif event == 'PostToolUseFailure':
-    # Bash failures arrive here with error field (e.g. "Exit code 1")
+    # Bash failures arrive here with error field (e.g. Exit code 1)
     tool_name = event_data.get('tool_name', '')
     error_msg = event_data.get('error', '')
     if tool_name == 'Bash' and error_msg:

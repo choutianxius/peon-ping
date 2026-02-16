@@ -1727,4 +1727,78 @@ json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
   [ "$tab_rgb" = "65 115 80" ]
 }
 
+# ============================================================
+# New event routing: PostToolUseFailure, PreCompact, task.acknowledge
+# ============================================================
+
+@test "PostToolUseFailure with Bash error plays task.error sound" {
+  run_peon '{"hook_event_name":"PostToolUseFailure","tool_name":"Bash","error":"Exit code 1","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+  sound=$(afplay_sound)
+  [[ "$sound" == *"/packs/peon/sounds/Error"* ]]
+}
+
+@test "PostToolUseFailure with non-Bash tool exits silently" {
+  run_peon '{"hook_event_name":"PostToolUseFailure","tool_name":"Read","error":"File not found","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  ! afplay_was_called
+}
+
+@test "PostToolUseFailure with Bash but no error exits silently" {
+  run_peon '{"hook_event_name":"PostToolUseFailure","tool_name":"Bash","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  ! afplay_was_called
+}
+
+@test "PreCompact plays resource.limit sound" {
+  run_peon '{"hook_event_name":"PreCompact","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+  sound=$(afplay_sound)
+  [[ "$sound" == *"/packs/peon/sounds/Limit"* ]]
+}
+
+@test "task.acknowledge is off by default (no sound without explicit config)" {
+  # Override config to NOT include task.acknowledge in categories
+  cat > "$TEST_DIR/config.json" <<'JSON'
+{
+  "active_pack": "peon",
+  "volume": 0.5,
+  "enabled": true,
+  "categories": {
+    "session.start": true,
+    "task.complete": true,
+    "task.error": true,
+    "input.required": true,
+    "resource.limit": true,
+    "user.spam": true
+  }
+}
+JSON
+  run_peon '{"hook_event_name":"UserPromptSubmit","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  ! afplay_was_called
+}
+
+@test "task.acknowledge plays sound when explicitly enabled" {
+  # Override config to enable task.acknowledge
+  cat > "$TEST_DIR/config.json" <<'JSON'
+{
+  "active_pack": "peon",
+  "volume": 0.5,
+  "enabled": true,
+  "categories": {
+    "task.acknowledge": true,
+    "user.spam": true
+  }
+}
+JSON
+  run_peon '{"hook_event_name":"UserPromptSubmit","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+  sound=$(afplay_sound)
+  [[ "$sound" == *"/packs/peon/sounds/Ack"* ]]
+}
+
 
