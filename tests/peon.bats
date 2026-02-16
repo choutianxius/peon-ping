@@ -1632,4 +1632,99 @@ assert mn['enabled'] == False, 'expected disabled'
   [[ "$output" == *"switched to sc_kerrigan"* ]]
 }
 
+# ============================================================
+# Tab color profiles
+# ============================================================
+
+@test "tab color profile: project-specific colors override defaults" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['tab_color'] = {
+    'color_profiles': {
+        'myproject': {
+            'ready': [10, 20, 30],
+            'working': [40, 50, 60],
+            'done': [70, 80, 90],
+            'needs_approval': [100, 110, 120]
+        }
+    }
+}
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/.tab_color_rgb" ]
+  tab_rgb=$(cat "$TEST_DIR/.tab_color_rgb")
+  [ "$tab_rgb" = "10 20 30" ]
+}
+
+@test "tab color profile: unmatched project falls back to defaults" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['tab_color'] = {
+    'color_profiles': {
+        'other-project': {
+            'ready': [10, 20, 30]
+        }
+    }
+}
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/.tab_color_rgb" ]
+  tab_rgb=$(cat "$TEST_DIR/.tab_color_rgb")
+  # Default ready color: 65 115 80
+  [ "$tab_rgb" = "65 115 80" ]
+}
+
+@test "tab color profile: partial override inherits remaining states from defaults" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['tab_color'] = {
+    'color_profiles': {
+        'myproject': {
+            'ready': [10, 20, 30]
+        }
+    }
+}
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  # SessionStart → status 'ready' → should use profile color
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  tab_rgb=$(cat "$TEST_DIR/.tab_color_rgb")
+  [ "$tab_rgb" = "10 20 30" ]
+
+  rm -f "$TEST_DIR/.tab_color_rgb"
+
+  # Stop → status 'done' → profile has no 'done', should fall back to default (65 100 140)
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  tab_rgb=$(cat "$TEST_DIR/.tab_color_rgb")
+  [ "$tab_rgb" = "65 100 140" ]
+}
+
+@test "tab color profile: non-dict profile value is ignored gracefully" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['tab_color'] = {
+    'color_profiles': {
+        'myproject': 'invalid'
+    }
+}
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/.tab_color_rgb" ]
+  tab_rgb=$(cat "$TEST_DIR/.tab_color_rgb")
+  # Should fall back to default ready color
+  [ "$tab_rgb" = "65 115 80" ]
+}
+
 

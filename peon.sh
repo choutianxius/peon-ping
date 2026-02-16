@@ -1974,6 +1974,9 @@ if tab_color_enabled:
         'needs_approval': [150, 70, 70],   # muted red
     }
     custom = tab_color_cfg.get('colors', {})
+    color_profiles = tab_color_cfg.get('color_profiles', {})
+    if project in color_profiles and isinstance(color_profiles[project], dict):
+        custom = dict(custom, **color_profiles[project])
     colors = dict((k, custom.get(k, v)) for k, v in default_colors.items())
     status_key = status.replace(' ', '_') if status else ''
     if status_key in colors:
@@ -2078,6 +2081,8 @@ fi
 
 # --- Set iTerm2 tab color (OSC 6) ---
 # Uses /dev/tty for the same reason as tab title above.
+# In test mode, write resolved color to file for BATS verification.
+[ "${PEON_TEST:-0}" = "1" ] && [ -n "$TAB_COLOR_RGB" ] && echo "$TAB_COLOR_RGB" > "$PEON_DIR/.tab_color_rgb"
 if [ -n "$TAB_COLOR_RGB" ] && [[ "${TERM_PROGRAM:-}" == "iTerm.app" ]]; then
   read -r _R _G _B <<< "$TAB_COLOR_RGB"
   printf "\033]6;1;bg;red;brightness;%d\a" "$_R" > /dev/tty 2>/dev/null || true
