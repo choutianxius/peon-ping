@@ -1873,7 +1873,7 @@ elif event == 'SessionEnd':
     print('PEON_EXIT=true')
     sys.exit(0)
 else:
-    # Unknown event (e.g. PostToolUseFailure) — exit cleanly
+    # Unknown event — exit cleanly
     print('PEON_EXIT=true')
     sys.exit(0)
 

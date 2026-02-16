@@ -836,7 +836,7 @@ events = ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'Stop', 'Notificatio
 
 # PostToolUseFailure only triggers on Bash failures — use matcher to limit scope
 bash_only_events = ('PostToolUseFailure',)
-# PreCompact doesn't support matchers — empty matcher is fine
+# PreCompact supports manual|auto matchers — empty matcher fires for both
 
 for event in events:
     hook = peon_hook_sync if event in sync_events else peon_hook_async
