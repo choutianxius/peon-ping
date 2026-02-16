@@ -286,3 +286,153 @@ print('OK')
   [ -d "$INSTALL_DIR/packs/glados" ]
   [ ! -d "$INSTALL_DIR/packs/peon" ]
 }
+
+# --- is_safe_filename tests ---
+
+@test "is_safe_filename allows question marks and exclamation marks" {
+  # Source just the function from install.sh
+  eval "$(sed -n '/^is_safe_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  is_safe_filename "New_construction?.mp3"
+  is_safe_filename "Yeah?.mp3"
+  is_safe_filename "What!.wav"
+  is_safe_filename "Hello.wav"
+}
+
+@test "is_safe_filename rejects unsafe characters" {
+  eval "$(sed -n '/^is_safe_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  ! is_safe_filename "../etc/passwd"
+  ! is_safe_filename "file;rm -rf /"
+  ! is_safe_filename 'file$(cmd)'
+}
+
+# --- urlencode_filename tests ---
+
+@test "urlencode_filename encodes question marks" {
+  eval "$(sed -n '/^urlencode_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  result=$(urlencode_filename "New_construction?.mp3")
+  [ "$result" = "New_construction%3F.mp3" ]
+}
+
+@test "urlencode_filename encodes exclamation marks" {
+  eval "$(sed -n '/^urlencode_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  result=$(urlencode_filename "Wow!.mp3")
+  [ "$result" = "Wow%21.mp3" ]
+}
+
+@test "urlencode_filename encodes hash symbols" {
+  eval "$(sed -n '/^urlencode_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  result=$(urlencode_filename "Track#1.mp3")
+  [ "$result" = "Track%231.mp3" ]
+}
+
+@test "urlencode_filename leaves normal filenames unchanged" {
+  eval "$(sed -n '/^urlencode_filename()/,/^}/p' "$CLONE_DIR/install.sh")"
+  result=$(urlencode_filename "Hello.wav")
+  [ "$result" = "Hello.wav" ]
+}
+
+# --- checksum caching tests ---
+
+@test "re-install skips already-downloaded sound files via checksum cache" {
+  # First install
+  bash "$CLONE_DIR/install.sh" --packs=peon
+  [ -f "$INSTALL_DIR/packs/peon/.checksums" ]
+
+  # Record file modification times
+  stat -f '%m' "$INSTALL_DIR/packs/peon/sounds/"* > "$TEST_HOME/mtimes_before"
+
+  # Sleep to ensure mtime would change if files were rewritten
+  sleep 1
+
+  # Re-install
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # Files should NOT have been re-downloaded (mtimes unchanged)
+  stat -f '%m' "$INSTALL_DIR/packs/peon/sounds/"* > "$TEST_HOME/mtimes_after"
+  diff "$TEST_HOME/mtimes_before" "$TEST_HOME/mtimes_after"
+}
+
+@test "checksums file is created during install" {
+  bash "$CLONE_DIR/install.sh" --packs=peon
+  [ -f "$INSTALL_DIR/packs/peon/.checksums" ]
+  # Should have at least one entry
+  [ "$(wc -l < "$INSTALL_DIR/packs/peon/.checksums" | tr -d ' ')" -gt 0 ]
+}
+
+@test "corrupted file is re-downloaded on re-install" {
+  # First install
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # Corrupt a sound file (change its content so checksum mismatches)
+  sound_file=$(ls "$INSTALL_DIR/packs/peon/sounds/"*.wav 2>/dev/null | head -1)
+  [ -n "$sound_file" ]
+  echo "CORRUPTED" > "$sound_file"
+
+  # Re-install — corrupted file should be re-downloaded
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # File should no longer contain "CORRUPTED" (mock curl writes "RIFF")
+  ! grep -q "CORRUPTED" "$sound_file"
+}
+
+@test "install does not rm -rf sounds directory" {
+  # First install
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # Add an extra file to the sounds directory
+  echo "extra" > "$INSTALL_DIR/packs/peon/sounds/custom_sound.wav"
+
+  # Re-install
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # Extra file should still exist (not wiped by rm -rf)
+  [ -f "$INSTALL_DIR/packs/peon/sounds/custom_sound.wav" ]
+}
+
+# --- URL encoding in download path ---
+
+@test "mock curl receives URL-encoded filename for special chars" {
+  # Create a manifest with a filename containing a question mark
+  SPECIAL_MANIFEST='{"cesp_version":"1.0","name":"mock","display_name":"Mock Pack","categories":{"session.start":{"sounds":[{"file":"sounds/Yeah?.wav","label":"Yeah?"}]}}}'
+
+  # Override mock curl to log URLs and handle the special manifest
+  cat > "$MOCK_BIN/curl" <<MOCK_CURL
+#!/bin/bash
+url=""
+output=""
+args=("\$@")
+for ((i=0; i<\${#args[@]}; i++)); do
+  case "\${args[\$i]}" in
+    -o) output="\${args[\$((i+1))]}" ;;
+    http*) url="\${args[\$i]}" ;;
+  esac
+done
+# Log URL to file (not stdout — that breaks piped registry fetch)
+echo "\$url" >> "$TEST_HOME/curl_urls.log"
+case "\$url" in
+  *index.json)
+    if [ -n "\$output" ]; then
+      echo '$MOCK_REGISTRY_JSON' > "\$output"
+    else
+      echo '$MOCK_REGISTRY_JSON'
+    fi
+    ;;
+  *openpeon.json)
+    echo '$SPECIAL_MANIFEST' > "\$output"
+    ;;
+  *sounds/*)
+    printf 'RIFF' > "\$output"
+    ;;
+  *)
+    if [ -n "\$output" ]; then echo "mock" > "\$output"; fi
+    ;;
+esac
+exit 0
+MOCK_CURL
+  chmod +x "$MOCK_BIN/curl"
+
+  bash "$CLONE_DIR/install.sh" --packs=peon
+
+  # Check that curl was called with %3F instead of literal ?
+  grep -q '%3F' "$TEST_HOME/curl_urls.log"
+}

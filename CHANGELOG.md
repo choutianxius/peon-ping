@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.2 (2026-02-15)
+
+### Fixed
+- SHA256 checksum-based caching for sound downloads: re-runs skip files that are already downloaded and intact, corrupted files are auto-detected and re-downloaded ([#164](https://github.com/PeonPing/peon-ping/pull/164))
+- URL-encode special characters (`?`, `!`, `#`) in filenames when downloading from GitHub, fixing packs with filenames like `New_construction?.mp3` ([#164](https://github.com/PeonPing/peon-ping/pull/164))
+- Allow `?` and `!` in sound filenames (`is_safe_filename`) ([#164](https://github.com/PeonPing/peon-ping/pull/164))
+- Remove destructive `rm -rf` that wiped all sounds before re-downloading on updates ([#164](https://github.com/PeonPing/peon-ping/pull/164))
+
 ## v1.8.1 (2026-02-13)
 
 ### Fixed
