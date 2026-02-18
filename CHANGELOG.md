@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.2.1 (2026-02-18)
+
+### Fixed
+- `peon packs install`, `peon packs use --install`, and `peon packs list --registry` now correctly locate `pack-download.sh` on Homebrew and adapter installs where `$PEON_DIR` is remapped away from the script directory ([#204](https://github.com/PeonPing/peon-ping/pull/204))
+- Test isolation: `PEON_TEST=1` now exported globally in test setup so all `run bash peon.sh` calls correctly skip the Homebrew path probe
+
 ## v2.2.0 (2026-02-17)
 
 ### Added
