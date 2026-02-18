@@ -1481,10 +1481,13 @@ Pack management:
   packs remove --all      Remove all packs except the active one
 
 Mobile notifications:
-  mobile ntfy <topic>  Set up ntfy.sh push notifications
-  mobile off           Disable mobile notifications
-  mobile status        Show mobile config
-  mobile test          Send a test notification
+  mobile ntfy <topic>      Set up ntfy.sh push notifications
+  mobile pushover          Set up Pushover push notifications
+  mobile telegram          Set up Telegram bot notifications
+  mobile on                Re-enable mobile notifications (after off)
+  mobile off               Disable mobile notifications
+  mobile status            Show mobile config
+  mobile test              Send a test notification
 
 Trainer (exercise reminders):
   trainer on           Enable trainer mode
@@ -1496,10 +1499,11 @@ Trainer (exercise reminders):
   trainer help         Show trainer help
 
 Relay (SSH/devcontainer/Codespaces):
-  relay [--port=N]     Start audio relay on your local machine
-  relay --daemon       Start relay in background
-  relay --stop         Stop background relay
-  relay --status       Check if relay is running
+  relay [--port=N]        Start audio relay on your local machine
+  relay --bind=<addr>     Bind relay to a specific address (default: 127.0.0.1)
+  relay --daemon          Start relay in background
+  relay --stop            Stop background relay
+  relay --status          Check if relay is running
 HELPEOF
     exit 0 ;;
   trainer)
