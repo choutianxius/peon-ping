@@ -11,7 +11,23 @@ import { platform as osPlatform } from "os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const home = process.env.HOME || process.env.USERPROFILE || "";
-const volume = parseFloat(process.env.PEON_VOLUME || "0.5") || 0.5;
+
+function readConfigVolume() {
+  if (process.env.PEON_VOLUME) return parseFloat(process.env.PEON_VOLUME) || 0.5;
+  const candidates = [
+    join(home, ".claude", "hooks", "peon-ping", "config.json"),
+    join(home, ".openpeon", "config.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      const cfg = JSON.parse(readFileSync(p, "utf-8"));
+      if (typeof cfg.volume === "number") return cfg.volume;
+    } catch {}
+  }
+  return 0.5;
+}
+
+const volume = readConfigVolume();
 
 let version = "2.1.0";
 try { version = readFileSync(join(__dirname, "..", "VERSION"), "utf-8").trim(); } catch {}
