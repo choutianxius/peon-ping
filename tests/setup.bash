@@ -342,6 +342,13 @@ relay_call_count() {
   fi
 }
 
+# Helper: get the resolved icon path
+resolved_icon() {
+  if [ -f "$TEST_DIR/.icon_path" ]; then
+    cat "$TEST_DIR/.icon_path"
+  fi
+}
+
 # Helper: check if a mobile notification was sent
 mobile_was_called() {
   [ -f "$TEST_DIR/mobile_curl.log" ] && [ -s "$TEST_DIR/mobile_curl.log" ]

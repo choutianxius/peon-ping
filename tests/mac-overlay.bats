@@ -89,6 +89,21 @@ overlay_log() {
   [[ "$(overlay_log)" == *"peon-icon.png"* ]]
 }
 
+@test "macOS overlay passes pack-specific icon when set" {
+  # Set pack-level icon in manifest
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'pack-icon.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  echo "fake-png" > "$TEST_DIR/packs/peon/pack-icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  overlay_was_called
+  [[ "$(overlay_log)" == *"pack-icon.png"* ]]
+}
+
 # ============================================================
 # Standard mode fallback
 # ============================================================

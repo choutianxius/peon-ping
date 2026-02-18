@@ -1980,4 +1980,128 @@ JSON
   [[ "$sound" == *"/packs/peon/sounds/Ack"* ]]
 }
 
+# ============================================================
+# Icon resolution (CESP 5.5)
+# ============================================================
+
+@test "Icon: pack-level icon is resolved" {
+  # Add icon field to pack manifest root
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'pack-icon.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  echo "fake-png" > "$TEST_DIR/packs/peon/pack-icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [[ "$icon" == *"/packs/peon/pack-icon.png" ]]
+}
+
+@test "Icon: category-level icon overrides pack-level" {
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'pack-icon.png'
+m['categories']['task.complete']['icon'] = 'cat-icon.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  echo "fake-png" > "$TEST_DIR/packs/peon/pack-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/cat-icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [[ "$icon" == *"/packs/peon/cat-icon.png" ]]
+}
+
+@test "Icon: sound-level icon overrides category and pack" {
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'pack-icon.png'
+m['categories']['task.complete']['icon'] = 'cat-icon.png'
+for s in m['categories']['task.complete']['sounds']:
+    s['icon'] = 'snd-icon.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  echo "fake-png" > "$TEST_DIR/packs/peon/pack-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/cat-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/snd-icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [[ "$icon" == *"/packs/peon/snd-icon.png" ]]
+}
+
+@test "Icon: icon.png at pack root used as fallback" {
+  # No icon fields in manifest, but icon.png exists at pack root
+  echo "fake-png" > "$TEST_DIR/packs/peon/icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [[ "$icon" == *"/packs/peon/icon.png" ]]
+}
+
+@test "Icon: path traversal is blocked" {
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = '../../etc/passwd'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [ -z "$icon" ]
+}
+
+@test "Icon: missing icon file results in empty path" {
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'nonexistent.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [ -z "$icon" ]
+}
+
+@test "Icon: no icon fields uses default fallback" {
+  # Standard manifest with no icon fields — .icon_path should not be written
+  mkdir -p "$TEST_DIR/docs"
+  echo "fake-png" > "$TEST_DIR/docs/peon-icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [ -z "$icon" ]
+  # Overlay should still use default peon-icon.png
+  if [ -f "$TEST_DIR/overlay.log" ]; then
+    [[ "$(cat "$TEST_DIR/overlay.log")" == *"peon-icon.png"* ]]
+  fi
+}
+
+@test "Icon: sound-level icon takes priority over all levels" {
+  # Set all three levels, verify sound wins
+  python3 -c "
+import json
+m = json.load(open('$TEST_DIR/packs/peon/manifest.json'))
+m['icon'] = 'pack-icon.png'
+m['categories']['task.complete']['icon'] = 'cat-icon.png'
+for s in m['categories']['task.complete']['sounds']:
+    s['icon'] = 'snd-icon.png'
+json.dump(m, open('$TEST_DIR/packs/peon/manifest.json', 'w'))
+"
+  echo "fake-png" > "$TEST_DIR/packs/peon/pack-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/cat-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/snd-icon.png"
+  echo "fake-png" > "$TEST_DIR/packs/peon/icon.png"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  icon=$(resolved_icon)
+  [[ "$icon" == *"/packs/peon/snd-icon.png" ]]
+}
+
 

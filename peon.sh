@@ -228,7 +228,7 @@ play_sound() {
 # Args: msg, title, color (red/blue/yellow)
 send_notification() {
   local msg="$1" title="$2" color="${3:-red}"
-  local icon_path="$PEON_DIR/docs/peon-icon.png"
+  local icon_path="${4:-$PEON_DIR/docs/peon-icon.png}"
 
   # Synchronous mode for tests (avoid race with backgrounded processes)
   local use_bg=true
@@ -2093,6 +2093,7 @@ if category and not cat_enabled.get(category, True):
 
 # --- Pick sound (skip if no category or paused) ---
 sound_file = ''
+icon_path = ''
 if category and not paused:
     pack_dir = os.path.join(peon_dir, 'packs', active_pack)
     try:
@@ -2121,6 +2122,20 @@ if category and not paused:
             pack_root = os.path.realpath(pack_dir) + os.sep
             if candidate.startswith(pack_root):
                 sound_file = candidate
+            # Icon resolution chain (CESP §5.5)
+            icon_candidate = ''
+            if pick.get('icon'):
+                icon_candidate = str(pick['icon'])
+            elif manifest.get('categories', {}).get(category, {}).get('icon'):
+                icon_candidate = str(manifest['categories'][category]['icon'])
+            elif manifest.get('icon'):
+                icon_candidate = str(manifest['icon'])
+            elif os.path.isfile(os.path.join(pack_dir, 'icon.png')):
+                icon_candidate = 'icon.png'
+            if icon_candidate:
+                icon_resolved = os.path.realpath(os.path.join(pack_dir, icon_candidate))
+                if icon_resolved.startswith(pack_root) and os.path.isfile(icon_resolved):
+                    icon_path = icon_resolved
     except Exception:
         pass
 
@@ -2223,6 +2238,7 @@ mn = cfg.get('mobile_notify', {})
 mobile_on = bool(mn and mn.get('service') and mn.get('enabled', True))
 print('MOBILE_NOTIF=' + ('true' if mobile_on else 'false'))
 print('SOUND_FILE=' + q(sound_file))
+print('ICON_PATH=' + q(icon_path))
 print('TRAINER_SOUND=' + q(trainer_sound))
 print('TRAINER_MSG=' + q(trainer_msg))
 print('TAB_COLOR_RGB=' + q(tab_color_rgb))
@@ -2313,6 +2329,7 @@ fi
 # Uses /dev/tty for the same reason as tab title above.
 # In test mode, write resolved color to file for BATS verification.
 [ "${PEON_TEST:-0}" = "1" ] && [ -n "$TAB_COLOR_RGB" ] && echo "$TAB_COLOR_RGB" > "$PEON_DIR/.tab_color_rgb"
+[ "${PEON_TEST:-0}" = "1" ] && [ -n "$ICON_PATH" ] && echo "$ICON_PATH" > "$PEON_DIR/.icon_path"
 if [ -n "$TAB_COLOR_RGB" ] && [[ "${TERM_PROGRAM:-}" == "iTerm.app" ]]; then
   read -r _R _G _B <<< "$TAB_COLOR_RGB"
   printf "\033]6;1;bg;red;brightness;%d\a" "$_R" > /dev/tty 2>/dev/null || true
@@ -2329,7 +2346,7 @@ _run_sound_and_notify() {
   # --- Smart notification: only when terminal is NOT frontmost ---
   if [ -n "$NOTIFY" ] && [ "$PAUSED" != "true" ] && [ "${DESKTOP_NOTIF:-true}" = "true" ]; then
     if ! terminal_is_focused; then
-      send_notification "$MSG" "$TITLE" "${NOTIFY_COLOR:-red}"
+      send_notification "$MSG" "$TITLE" "${NOTIFY_COLOR:-red}" "${ICON_PATH:-}"
     fi
   fi
 

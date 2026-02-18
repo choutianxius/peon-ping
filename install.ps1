@@ -629,6 +629,21 @@ $soundPath = Join-Path $packDir "sounds\$soundFile"
 
 if (-not (Test-Path $soundPath)) { exit 0 }
 
+# Icon resolution chain (CESP §5.5)
+$iconPath = ""
+$iconCandidate = ""
+if ($chosen.icon) { $iconCandidate = $chosen.icon }
+elseif ($manifest.categories.$category.icon) { $iconCandidate = $manifest.categories.$category.icon }
+elseif ($manifest.icon) { $iconCandidate = $manifest.icon }
+elseif (Test-Path (Join-Path $packDir "icon.png")) { $iconCandidate = "icon.png" }
+if ($iconCandidate) {
+    $resolved = [System.IO.Path]::GetFullPath((Join-Path $packDir $iconCandidate))
+    $packRoot = [System.IO.Path]::GetFullPath($packDir) + [System.IO.Path]::DirectorySeparatorChar
+    if ($resolved.StartsWith($packRoot) -and (Test-Path $resolved -PathType Leaf)) {
+        $iconPath = $resolved
+    }
+}
+
 # Save last played
 $state[$lastKey] = $soundFile
 try {
