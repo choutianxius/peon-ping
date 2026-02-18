@@ -135,7 +135,7 @@ peon relay --daemon       # 启动音频中继（用于 SSH/devcontainer）
 peon relay --stop         # 停止后台中继
 ```
 
-`peon preview` 支持的 CESP 分类：`session.start`、`session.end`、`task.acknowledge`、`task.complete`、`task.error`、`task.progress`、`input.required`、`resource.limit`、`user.spam`。
+`peon preview` 支持的 CESP 分类：`session.start`、`task.acknowledge`、`task.complete`、`task.error`、`input.required`、`resource.limit`、`user.spam`。（扩展分类 `session.end` 和 `task.progress` 已在 CESP 规范中定义，语音包可以实现，但目前未由内置钩子事件触发。）
 
 支持 Tab 补全 — 输入 `peon packs use <TAB>` 查看可用语音包名称。
 
