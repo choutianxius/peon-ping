@@ -63,6 +63,7 @@ MCP resources: `peon-ping://catalog`, `peon-ping://pack/{name}`
 ## IDEs Supported (hook-based)
 
 - Claude Code (built-in)
+- Gemini CLI (adapter)
 - GitHub Copilot (adapter)
 - OpenAI Codex
 - Cursor

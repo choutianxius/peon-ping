@@ -6,11 +6,11 @@
 ![macOS](https://img.shields.io/badge/macOS-blue) ![WSL2](https://img.shields.io/badge/WSL2-blue) ![Linux](https://img.shields.io/badge/Linux-blue) ![Windows](https://img.shields.io/badge/Windows-blue) ![SSH](https://img.shields.io/badge/SSH-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![Claude Code](https://img.shields.io/badge/Claude_Code-hook-ffab01) ![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-adapter-ffab01) ![Codex](https://img.shields.io/badge/Codex-adapter-ffab01) ![Cursor](https://img.shields.io/badge/Cursor-adapter-ffab01) ![OpenCode](https://img.shields.io/badge/OpenCode-adapter-ffab01) ![Kilo CLI](https://img.shields.io/badge/Kilo_CLI-adapter-ffab01) ![Kiro](https://img.shields.io/badge/Kiro-adapter-ffab01) ![Windsurf](https://img.shields.io/badge/Windsurf-adapter-ffab01) ![Antigravity](https://img.shields.io/badge/Antigravity-adapter-ffab01) ![OpenClaw](https://img.shields.io/badge/OpenClaw-adapter-ffab01)
+![Claude Code](https://img.shields.io/badge/Claude_Code-hook-ffab01) ![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-adapter-ffab01) ![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-adapter-ffab01) ![Codex](https://img.shields.io/badge/Codex-adapter-ffab01) ![Cursor](https://img.shields.io/badge/Cursor-adapter-ffab01) ![OpenCode](https://img.shields.io/badge/OpenCode-adapter-ffab01) ![Kilo CLI](https://img.shields.io/badge/Kilo_CLI-adapter-ffab01) ![Kiro](https://img.shields.io/badge/Kiro-adapter-ffab01) ![Windsurf](https://img.shields.io/badge/Windsurf-adapter-ffab01) ![Antigravity](https://img.shields.io/badge/Antigravity-adapter-ffab01) ![OpenClaw](https://img.shields.io/badge/OpenClaw-adapter-ffab01)
 
 **当你的 AI 编程助手需要关注时，播放游戏角色语音 + 显示视觉覆盖通知 — 或通过 MCP 让 AI 自行选择音效。**
 
-AI 编程助手完成任务或需要权限时不会通知你。你切换标签页、失去焦点，然后浪费 15 分钟重新进入状态。peon-ping 通过魔兽争霸、星际争霸、传送门、塞尔达等游戏的角色语音和醒目的屏幕横幅来解决这个问题 — 支持 **Claude Code**、**GitHub Copilot**、**Codex**、**Cursor**、**OpenCode**、**Kilo CLI**、**Kiro**、**Windsurf**、**Google Antigravity**、**OpenClaw** 及任何 MCP 客户端.
+AI 编程助手完成任务或需要权限时不会通知你。你切换标签页、失去焦点，然后浪费 15 分钟重新进入状态。peon-ping 通过魔兽争霸、星际争霸、传送门、塞尔达等游戏的角色语音和醒目的屏幕横幅来解决这个问题 — 支持 **Claude Code**、**Gemini CLI**、**GitHub Copilot**、**Codex**、**Cursor**、**OpenCode**、**Kilo CLI**、**Kiro**、**Windsurf**、**Google Antigravity**、**OpenClaw** 及任何 MCP 客户端.
 
 **查看演示** &rarr; [peonping.com](https://peonping.com/)
 
@@ -277,6 +277,7 @@ peon-ping 适用于任何支持钩子的代理式 IDE。适配器将 IDE 特定�
 | IDE | 状态 | 设置 |
 |---|---|---|
 | **Claude Code** | 内置 | `curl \| bash` 安装会自动处理 |
+| **Gemini CLI** | 适配器 | 在 `~/.gemini/settings.json` 中添加指向 `adapters/gemini.sh` 的钩子（[设置](#gemini-cli-设置)） |
 | **GitHub Copilot** | 适配器 | 在 `.github/hooks/hooks.json` 中添加指向 `adapters/copilot.sh` 的钩子（[设置](#github-copilot-设置)） |
 | **OpenAI Codex** | 适配器 | 在 `~/.codex/config.toml` 中添加 `notify = ["bash", "/absolute/path/to/.claude/hooks/peon-ping/adapters/codex.sh"]` |
 | **Cursor** | 内置 | `curl \| bash` 或 `peon-ping-setup` 自动检测并注册 Cursor 钩子 |
@@ -414,6 +415,58 @@ curl -fsSL https://raw.githubusercontent.com/PeonPing/peon-ping/main/adapters/ki
 安装程序将 `peon-ping.ts` 复制到 `~/.config/kilo/plugins/` 并在 `~/.config/kilo/peon-ping/config.json` 创建配置。语音包存储在共享 CESP 路径（`~/.openpeon/packs/`）。
 
 **功能：** 与 [OpenCode 适配器](#opencode-设置)相同 — 声音播放、CESP 事件映射、桌面通知、终端焦点检测、标签页标题、语音包切换、不重复逻辑和刷屏检测。
+
+### Gemini CLI 设置
+
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) 的 shell 适配器，完全符合 [CESP v1.0](https://github.com/PeonPing/openpeon) 规范。
+
+**设置步骤：**
+
+1. 确保已安装 peon-ping（`curl -fsSL https://peonping.com/install | bash`）
+
+2. 在 `~/.gemini/settings.json` 中添加以下钩子：
+
+   ```json
+   {
+     "hooks": {
+       "SessionStart": [
+         {
+           "matcher": "startup",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh SessionStart"
+         }
+       ],
+       "AfterAgent": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh AfterAgent"
+         }
+       ],
+       "AfterTool": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh AfterTool"
+         }
+       ],
+       "Notification": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh Notification"
+         }
+       ]
+     }
+   }
+   ```
+
+**事件映射：**
+
+- `SessionStart`（startup）→ 问候音效（*"准备好了吗？"*、*"是的？"*）
+- `AfterAgent` → 任务完成音效（*"干活，干活。"*、*"完成了！"*）
+- `AfterTool`（成功）→ 任务完成音效；（失败）→ 错误音效（*"我做不到。"*）
+- `Notification` → 系统通知
 
 ### Windsurf 设置
 

@@ -794,6 +794,21 @@ if os.path.isdir(opencode_dir):
     else:
         ides.append(('OpenCode', opencode_dir, 'detected (not set up)'))
 
+# Gemini CLI: check if hooks are registered in settings.json
+gemini_dir = os.environ.get('GEMINI_CONFIG_DIR', os.path.join(home, '.gemini'))
+gemini_settings = os.path.join(gemini_dir, 'settings.json')
+if os.path.isfile(gemini_settings):
+    try:
+        with open(gemini_settings) as f:
+            settings = json.load(f)
+            hooks = settings.get('hooks', {})
+            if any('gemini.sh' in str(h) for h in hooks.values()):
+                ides.append(('Gemini CLI', gemini_dir, 'installed'))
+            else:
+                ides.append(('Gemini CLI', gemini_dir, 'detected (not set up)'))
+    except Exception:
+        ides.append(('Gemini CLI', gemini_dir, 'detected'))
+
 if ides:
     print('peon-ping: IDEs')
     for name, path, status in ides:

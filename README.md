@@ -6,7 +6,7 @@
 ![macOS](https://img.shields.io/badge/macOS-blue) ![WSL2](https://img.shields.io/badge/WSL2-blue) ![Linux](https://img.shields.io/badge/Linux-blue) ![Windows](https://img.shields.io/badge/Windows-blue) ![SSH](https://img.shields.io/badge/SSH-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![Claude Code](https://img.shields.io/badge/Claude_Code-hook-ffab01) ![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-adapter-ffab01) ![Codex](https://img.shields.io/badge/Codex-adapter-ffab01) ![Cursor](https://img.shields.io/badge/Cursor-adapter-ffab01) ![OpenCode](https://img.shields.io/badge/OpenCode-adapter-ffab01) ![Kilo CLI](https://img.shields.io/badge/Kilo_CLI-adapter-ffab01) ![Kiro](https://img.shields.io/badge/Kiro-adapter-ffab01) ![Windsurf](https://img.shields.io/badge/Windsurf-adapter-ffab01) ![Antigravity](https://img.shields.io/badge/Antigravity-adapter-ffab01) ![OpenClaw](https://img.shields.io/badge/OpenClaw-adapter-ffab01)
+![Claude Code](https://img.shields.io/badge/Claude_Code-hook-ffab01) ![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-adapter-ffab01) ![GitHub Copilot](https://img.shields.io/badge/GitHub_Copilot-adapter-ffab01) ![Codex](https://img.shields.io/badge/Codex-adapter-ffab01) ![Cursor](https://img.shields.io/badge/Cursor-adapter-ffab01) ![OpenCode](https://img.shields.io/badge/OpenCode-adapter-ffab01) ![Kilo CLI](https://img.shields.io/badge/Kilo_CLI-adapter-ffab01) ![Kiro](https://img.shields.io/badge/Kiro-adapter-ffab01) ![Windsurf](https://img.shields.io/badge/Windsurf-adapter-ffab01) ![Antigravity](https://img.shields.io/badge/Antigravity-adapter-ffab01) ![OpenClaw](https://img.shields.io/badge/OpenClaw-adapter-ffab01)
 
 **Game character voice lines + visual overlay notifications when your AI coding agent needs attention — or let the agent pick its own sound via MCP.**
 
@@ -287,6 +287,7 @@ peon-ping works with any agentic IDE that supports hooks. Adapters translate IDE
 | IDE | Status | Setup |
 |---|---|---|
 | **Claude Code** | Built-in | `curl \| bash` install handles everything |
+| **Gemini CLI** | Adapter | Add hooks to `~/.gemini/settings.json` pointing to `adapters/gemini.sh` ([setup](#gemini-cli-setup)) |
 | **GitHub Copilot** | Adapter | Add hooks to `.github/hooks/hooks.json` pointing to `adapters/copilot.sh` ([setup](#github-copilot-setup)) |
 | **OpenAI Codex** | Adapter | Add `notify = ["bash", "/absolute/path/to/.claude/hooks/peon-ping/adapters/codex.sh"]` to `~/.codex/config.toml` |
 | **Cursor** | Built-in | `curl \| bash` or `peon-ping-setup` auto-detects and registers Cursor hooks |
@@ -424,6 +425,58 @@ curl -fsSL https://raw.githubusercontent.com/PeonPing/peon-ping/main/adapters/ki
 The installer copies `peon-ping.ts` to `~/.config/kilo/plugins/` and creates a config at `~/.config/kilo/peon-ping/config.json`. Packs are stored at the shared CESP path (`~/.openpeon/packs/`).
 
 **Features:** Same as the [OpenCode adapter](#opencode-setup) — sound playback, CESP event mapping, desktop notifications, terminal focus detection, tab titles, pack switching, no-repeat logic, and spam detection.
+
+### Gemini CLI setup
+
+A shell adapter for **Gemini CLI** with full [CESP v1.0](https://github.com/PeonPing/openpeon) conformance.
+
+**Setup:**
+
+1. Ensure peon-ping is installed (`curl -fsSL https://peonping.com/install | bash`)
+
+2. Add the following hooks to your `~/.gemini/settings.json`:
+
+   ```json
+   {
+     "hooks": {
+       "SessionStart": [
+         {
+           "matcher": "startup",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh SessionStart"
+         }
+       ],
+       "AfterAgent": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh AfterAgent"
+         }
+       ],
+       "AfterTool": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh AfterTool"
+         }
+       ],
+       "Notification": [
+         {
+           "matcher": "*",
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/gemini.sh Notification"
+         }
+       ]
+     }
+   }
+   ```
+
+**Event mapping:**
+
+- `SessionStart` (startup) → Greeting sound (*"Ready to work?"*, *"Yes?"*)
+- `AfterAgent` → Task completion sound (*"Work, work."*, *"Job's done!"*)
+- `AfterTool` → Success = Task completion sound, Failure = Error sound (*"I can't do that."*)
+- `Notification` → System notification
 
 ### Windsurf setup
 
