@@ -46,7 +46,7 @@ peon-ping is part of the [PeonPing](https://github.com/PeonPing) org:
 | **[og-packs](https://github.com/PeonPing/og-packs)** | Official sound packs (40 packs, tagged releases) |
 | **[homebrew-tap](https://github.com/PeonPing/homebrew-tap)** | Homebrew formula (`brew install PeonPing/tap/peon-ping`) |
 | **[openpeon](https://github.com/PeonPing/openpeon)** | CESP spec + openpeon.com website (Next.js in `site/`) |
-| **[peon-ping-avatar](https://github.com/PeonPing/peon-ping-avatar)** | macOS desktop pet — orc sprite that reacts to hook events (Electron + Three.js) |
+| **[peon-pet](https://github.com/PeonPing/peon-pet)** | macOS desktop pet — orc sprite that reacts to hook events (Electron + Three.js) |
 
 ## Architecture
 

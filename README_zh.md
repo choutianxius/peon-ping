@@ -646,7 +646,7 @@ powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\hooks\peon-pi
 - [openpeon.com](https://openpeon.com/) — CESP 规范、语音包浏览器、创建指南
 - [OpenPeon 注册表](https://github.com/PeonPing/registry) — 语音包注册表（GitHub Pages）
 - [og-packs](https://github.com/PeonPing/og-packs) — 官方语音包
-- [peon-ping-avatar](https://github.com/PeonPing/peon-ping-avatar) — macOS 桌面宠物（兽人精灵，响应钩子事件）
+- [peon-pet](https://github.com/PeonPing/peon-pet) — macOS 桌面宠物（兽人精灵，响应钩子事件）
 - [许可证 (MIT)](LICENSE)
 
 ## 支持项目

@@ -655,7 +655,7 @@ Sound packs are downloaded from the [OpenPeon registry](https://github.com/PeonP
 - [openpeon.com](https://openpeon.com/) — CESP spec, pack browser, creation guide
 - [OpenPeon registry](https://github.com/PeonPing/registry) — pack registry (GitHub Pages)
 - [og-packs](https://github.com/PeonPing/og-packs) — official sound packs
-- [peon-ping-avatar](https://github.com/PeonPing/peon-ping-avatar) — macOS desktop pet (orc sprite, reacts to hook events)
+- [peon-pet](https://github.com/PeonPing/peon-pet) — macOS desktop pet (orc sprite, reacts to hook events)
 - [License (MIT)](LICENSE)
 
 ## Support the project

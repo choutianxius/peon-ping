@@ -11,7 +11,7 @@ peon-ping plays voice lines and shows bold on-screen overlay banners from Warcra
 - Pack Browser: https://openpeon.com/packs
 - CESP Spec: https://openpeon.com/spec
 - Registry: https://github.com/PeonPing/registry
-- Desktop Pet: https://github.com/PeonPing/peon-ping-avatar
+- Desktop Pet: https://github.com/PeonPing/peon-pet
 - X: https://x.com/peonping
 
 ## Install
