@@ -77,6 +77,36 @@ detect_headphones() {
   esac
 }
 
+# Detect if user is in an active meeting/call
+# Returns 0 (true) if meeting detected, 1 (false) if not
+detect_meeting() {
+  case "$PLATFORM" in
+    mac)
+      # Check if any microphone is in use (CoreAudio)
+      local _meeting_detect
+      _meeting_detect="$(find_bundled_script "meeting-detect")" || true
+      if [ -n "$_meeting_detect" ] && [ -x "$_meeting_detect" ]; then
+        local mic_status
+        mic_status=$("$_meeting_detect" 2>/dev/null) || true
+        [ "$mic_status" = "MIC_IN_USE" ] && return 0
+      fi
+      return 1
+      ;;
+    linux)
+      # Check mic via PipeWire/PulseAudio
+      if command -v wpctl &>/dev/null; then
+        local sources
+        sources=$(wpctl status 2>/dev/null | grep -A50 "Audio/Source" | grep "RUNNING") || true
+        [ -n "$sources" ] && return 0
+      fi
+      return 1
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 PEON_DIR="${CLAUDE_PEON_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 # Save original install directory for finding bundled scripts (Nix, Homebrew)
 _INSTALL_DIR="$PEON_DIR"
@@ -2209,6 +2239,7 @@ annoyed_window = float(cfg.get('annoyed_window_seconds', 10))
 silent_window = float(cfg.get('silent_window_seconds', 0))
 suppress_subagent_complete = str(cfg.get('suppress_subagent_complete', False)).lower() == 'true'
 headphones_only = str(cfg.get('headphones_only', False)).lower() == 'true'
+meeting_detect = str(cfg.get('meeting_detect', False)).lower() == 'true'
 suppress_sound_when_tab_focused = str(cfg.get('suppress_sound_when_tab_focused', False)).lower() == 'true'
 
 cats = cfg.get('categories', {})
@@ -2745,6 +2776,7 @@ mn = cfg.get('mobile_notify', {})
 mobile_on = bool(mn and mn.get('service') and mn.get('enabled', True))
 print('MOBILE_NOTIF=' + ('true' if mobile_on else 'false'))
 print('HEADPHONES_ONLY=' + ('true' if headphones_only else 'false'))
+print('MEETING_DETECT=' + ('true' if meeting_detect else 'false'))
 print('SUPPRESS_SOUND_WHEN_TAB_FOCUSED=' + ('true' if suppress_sound_when_tab_focused else 'false'))
 print('SOUND_FILE=' + q(sound_file))
 print('ICON_PATH=' + q(icon_path))
@@ -2759,6 +2791,11 @@ print('TAB_COLOR_RGB=' + q(tab_color_rgb))
 HEADPHONES_DETECTED=true
 if [ "${HEADPHONES_ONLY:-false}" = "true" ]; then
   detect_headphones || HEADPHONES_DETECTED=false
+fi
+
+IN_MEETING=false
+if [ "${MEETING_DETECT:-false}" = "true" ]; then
+  detect_meeting && IN_MEETING=true
 fi
 
 # Resolve session tty early so _run_sound_and_notify can check tab focus
@@ -2864,6 +2901,10 @@ _run_sound_and_notify() {
     local _skip_sound=false
     # Check headphones_only: skip sound if enabled but no headphones detected
     if [ "${HEADPHONES_ONLY:-false}" = "true" ] && [ "${HEADPHONES_DETECTED:-true}" = "false" ]; then
+      _skip_sound=true
+    fi
+    # Check meeting_detect: skip sound if in a meeting
+    if [ "$_skip_sound" = "false" ] && [ "${MEETING_DETECT:-false}" = "true" ] && [ "${IN_MEETING:-false}" = "true" ]; then
       _skip_sound=true
     fi
     # Check suppress_sound_when_tab_focused: skip sound if tab is focused

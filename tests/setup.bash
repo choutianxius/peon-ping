@@ -348,6 +348,18 @@ SCRIPT
 
   export PATH="$MOCK_BIN:$PATH"
 
+  # Mock meeting-detect binary — returns MIC_IN_USE or MIC_NOT_IN_USE based on fixture
+  mkdir -p "$TEST_DIR/scripts"
+  cat > "$TEST_DIR/scripts/meeting-detect" <<'SCRIPT'
+#!/bin/bash
+if [ -f "${CLAUDE_PEON_DIR}/.mock_mic_in_use" ]; then
+  echo "MIC_IN_USE"
+else
+  echo "MIC_NOT_IN_USE"
+fi
+SCRIPT
+  chmod +x "$TEST_DIR/scripts/meeting-detect"
+
   # Copy notify.sh into test dir so send_notification() can find it
   _src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   mkdir -p "$TEST_DIR/scripts"

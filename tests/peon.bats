@@ -3167,6 +3167,50 @@ json.dump(c, open('$TEST_DIR/config.json', 'w'))
 }
 
 # ============================================================
+# Meeting detection — auto-suppress during calls
+# ============================================================
+
+@test "meeting_detect: plays sound when no meeting active" {
+  # Enable meeting_detect in config
+  /usr/bin/python3 -c "
+import json
+c = json.load(open('$TEST_DIR/config.json'))
+c['meeting_detect'] = True
+json.dump(c, open('$TEST_DIR/config.json', 'w'))
+"
+  # No meeting fixtures → detect_meeting returns 1
+
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+}
+
+@test "meeting_detect: skips sound when mic in use" {
+  # Enable meeting_detect in config
+  /usr/bin/python3 -c "
+import json
+c = json.load(open('$TEST_DIR/config.json'))
+c['meeting_detect'] = True
+json.dump(c, open('$TEST_DIR/config.json', 'w'))
+"
+  # Mock mic in use (layer 2)
+  touch "$TEST_DIR/.mock_mic_in_use"
+
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  ! afplay_was_called
+}
+
+@test "meeting_detect disabled: plays sound regardless" {
+  # meeting_detect defaults to false, mock an active meeting
+  touch "$TEST_DIR/.mock_meeting_active"
+
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+}
+
+# ============================================================
 # Suppress sound when tab focused
 # ============================================================
 
