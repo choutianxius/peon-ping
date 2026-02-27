@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.12.0 (2026-02-27)
+
+### Added
+- **Windows PowerShell adapters** — native `.ps1` adapters for all 11 IDEs (codex, gemini, copilot, windsurf, kiro, openclaw, amp, antigravity, kimi, opencode, kilo). No Git Bash or WSL required. Filesystem watchers use .NET `FileSystemWatcher`. 198 Pester tests added. (#285)
+
+### Fixed
+- **OpenCode subagent noise** — filter subagent sessions from sound/notification events. Subagent sessions (spawned by Task tool with `parentID`) no longer trigger sounds for `session.idle`, `session.error`, and `session.status` events. (#290, fixes #289)
+
+
 ## v2.11.0 (2026-02-26)
 
 ### Added
