@@ -9,6 +9,7 @@ import { CcgUsDozerPreview } from "./CcgUsDozerPreview";
 import { CcgGlaWorkerPreview } from "./CcgGlaWorkerPreview";
 import { Wc2HumanShipsPreview } from "./Wc2HumanShipsPreview";
 import { Wc2SapperPreview } from "./Wc2SapperPreview";
+import { JarvisPreview } from "./JarvisPreview";
 import { Hal9000Preview } from "./Hal9000Preview";
 import { SiliconValleyPreview } from "./SiliconValleyPreview";
 import { WolfETPreview } from "./WolfETPreview";
@@ -116,6 +117,14 @@ export const RemotionRoot: React.FC = () => {
         id="Hal9000Preview"
         component={Hal9000Preview}
         durationInFrames={1223}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+      <Composition
+        id="JarvisPreview"
+        component={JarvisPreview}
+        durationInFrames={1169}
         fps={30}
         width={1080}
         height={1080}
