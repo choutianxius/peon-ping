@@ -53,6 +53,12 @@ Then run `peon-ping-setup` to register hooks and download sound packs. macOS and
 curl -fsSL https://raw.githubusercontent.com/PeonPing/peon-ping/main/install.sh | bash
 ```
 
+⚠️ In WSL2, **ffmpeg** must be installed to use sound packs that use formats other than **WAV**. In Debian distros, install with
+
+```sh
+sudo apt update; sudo apt install -y ffmpeg
+```
+
 ### Option 3: Installer for Windows
 
 ```powershell
@@ -122,7 +128,7 @@ For reproducible setups, use the Home Manager module:
   programs.peon-ping = {
     enable = true;
     package = inputs.peon-ping.packages.${pkgs.system}.default;
-    
+
     settings = {
       default_pack = "glados";
       volume = 0.7;
@@ -137,7 +143,7 @@ For reproducible setups, use the Home Manager module:
         "user.spam" = true;
       };
     };
-    
+
     installPacks = [ "peon" "glados" "sc_kerrigan" ];
     enableZshIntegration = true;
   };
@@ -223,10 +229,11 @@ Pausing mutes sounds and desktop notifications instantly. Persists across sessio
 
 ## Configuration
 
-peon-ping installs two slash commands in Claude Code:
+peon-ping installs slash commands in Claude Code:
 
 - `/peon-ping-toggle` — mute/unmute sounds
 - `/peon-ping-config` — change any setting (volume, packs, categories, etc.)
+- `/peon-ping-rename <name>` — give this session a custom name shown in notification titles and the terminal tab title (zero tokens, hook-intercepted); no argument resets to auto-detect
 
 You can also just ask Claude to change settings for you — e.g. "enable round-robin pack rotation", "set volume to 0.3", or "add glados to my pack rotation". No need to edit config files manually.
 
@@ -295,7 +302,9 @@ This means you can:
 - **meeting_detect** Detects if the microphone is currently being used and temporarily suppresses the audio only until the microphone is no longer in use. Notification still appears.
 - **notification_position** (string, default: `"top-center"`): Where overlay notifications appear on screen. Options: `"top-left"`, `"top-center"`, `"top-right"`, `"bottom-left"`, `"bottom-center"`, `"bottom-right"`.
 - **notification_dismiss_seconds** (number, default: `4`): Auto-dismiss overlay notifications after N seconds. Set to `0` for persistent notifications that require a click to dismiss.
-- **notification_title_override** (string, default: `""`): Override the project name shown in notification titles. When empty, the project name is auto-detected from `.peon-label` > `project_name_map` > git repo name > folder name.
+- **`CLAUDE_SESSION_NAME` env var**: Set before launching `claude` to give a session a custom name. Shows in both desktop notification titles and terminal tab titles. Priority over all config-based naming. Example: `CLAUDE_SESSION_NAME="Auth Refactor" claude` or `export CLAUDE_SESSION_NAME="Feature: Auth"` then `claude`. Each terminal gets its own title automatically since peon-ping runs as a child of that Claude instance.
+- **notification_title_override** (string, default: `""`): Override the project name shown in notification titles. When empty, the project name is auto-detected from `/peon-ping-rename` > `CLAUDE_SESSION_NAME` > `.peon-label` > `notification_title_script` > `project_name_map` > git repo name > folder name.
+- **notification_title_script** (string, default: `""`): Shell command run at event time to compute the project name dynamically. Receives env vars: `PEON_SESSION_ID`, `PEON_CWD`, `PEON_HOOK_EVENT`, `PEON_SESSION_NAME`. Use stdout (trimmed, max 50 chars); non-zero exit falls through to the next tier. Example: `"basename $PEON_CWD"`.
 - **project_name_map** (object, default: `{}`): Map directory paths to custom project labels for notifications. Keys are path patterns, values are display names. Example: `{ "/home/user/work/client-a": "Client A" }`.
 - **notification_templates** (object, default: `{}`): Custom message format strings for notification events. Keys are event types (`stop`, `permission`, `error`, `idle`, `question`), values are template strings with variable substitution. Available variables: `{project}`, `{summary}`, `{tool_name}`, `{status}`, `{event}`. Example: `{ "stop": "{project}: {summary}", "permission": "{project}: {tool_name} needs approval" }`.
 

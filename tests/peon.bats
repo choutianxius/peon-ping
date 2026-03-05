@@ -498,6 +498,35 @@ print('absent' if 'sub4' not in subs else 'present')
   [ "$result" = "absent" ]
 }
 
+@test "suppress_subagent_complete: subagent PermissionRequest is suppressed" {
+  cat > "$TEST_DIR/config.json" <<'JSON'
+{ "active_pack": "peon", "volume": 0.5, "enabled": true, "categories": {}, "suppress_subagent_complete": true, "pack_rotation": ["peon","peon"] }
+JSON
+  # Parent session gets a SubagentStart (records pending_subagent_pack)
+  run_peon '{"hook_event_name":"SubagentStart","cwd":"/tmp/myproject","session_id":"parent5","permission_mode":"default"}'
+  # Subagent session starts within 30s — marked as subagent
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"sub5","permission_mode":"default"}'
+  count_before=$(afplay_call_count)
+  # Subagent PermissionRequest should be suppressed — no additional afplay calls
+  run_peon '{"hook_event_name":"PermissionRequest","cwd":"/tmp/myproject","session_id":"sub5","permission_mode":"default","tool_name":"Bash"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  count_after=$(afplay_call_count)
+  [ "$count_after" = "$count_before" ]
+}
+
+@test "suppress_subagent_complete: parent PermissionRequest still plays sound" {
+  cat > "$TEST_DIR/config.json" <<'JSON'
+{ "active_pack": "peon", "volume": 0.5, "enabled": true, "categories": {}, "suppress_subagent_complete": true, "pack_rotation": ["peon","peon"] }
+JSON
+  # Subagent flow: parent → SubagentStart → sub SessionStart
+  run_peon '{"hook_event_name":"SubagentStart","cwd":"/tmp/myproject","session_id":"parent6","permission_mode":"default"}'
+  run_peon '{"hook_event_name":"SessionStart","cwd":"/tmp/myproject","session_id":"sub6","permission_mode":"default"}'
+  # Parent session PermissionRequest should still play
+  run_peon '{"hook_event_name":"PermissionRequest","cwd":"/tmp/myproject","session_id":"parent6","permission_mode":"default","tool_name":"Bash"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  afplay_was_called
+}
+
 # ============================================================
 # Update check
 # ============================================================
@@ -536,6 +565,98 @@ print('absent' if 'sub4' not in subs else 'present')
 @test "empty cwd falls back to 'claude'" {
   run_peon '{"hook_event_name":"SessionStart","cwd":"","session_id":"s1","permission_mode":"default"}'
   [ "$PEON_EXIT" -eq 0 ]
+}
+
+@test "state session_names overrides project name (set via /peon-ping-rename)" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+state = json.load(open('$TEST_DIR/.state.json'))
+state['session_names'] = {'s1': 'My Renamed Session'}
+json.dump(state, open('$TEST_DIR/.state.json', 'w'))
+"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
+  grep -q "My Renamed Session" "$TEST_DIR/terminal_notifier.log"
+}
+
+@test "state session_names takes priority over CLAUDE_SESSION_NAME" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+state = json.load(open('$TEST_DIR/.state.json'))
+state['session_names'] = {'s1': 'State Name'}
+json.dump(state, open('$TEST_DIR/.state.json', 'w'))
+"
+  CLAUDE_SESSION_NAME="Env Name" \
+    run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
+  grep -q "State Name" "$TEST_DIR/terminal_notifier.log"
+  ! grep -q "Env Name" "$TEST_DIR/terminal_notifier.log"
+}
+
+@test "CLAUDE_SESSION_NAME overrides project name in notification title" {
+  # Set standard notification style so title appears in terminal_notifier.log
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  CLAUDE_SESSION_NAME="My Test Session" \
+    run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
+  grep -q "My Test Session" "$TEST_DIR/terminal_notifier.log"
+}
+
+@test "CLAUDE_SESSION_NAME strips disallowed characters" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  CLAUDE_SESSION_NAME="Feature: Auth <Refactor>" \
+    run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
+  # Angle brackets and colon stripped; remaining text preserved
+  grep -q "Feature Auth Refactor" "$TEST_DIR/terminal_notifier.log"
+}
+
+@test "notification_title_script output used as project name" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+cfg['notification_title_script'] = 'echo Scripted'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
+  grep -q "Scripted" "$TEST_DIR/terminal_notifier.log"
+}
+
+@test "notification_title_script non-zero exit falls through to next tier" {
+  /usr/bin/python3 -c "
+import json
+cfg = json.load(open('$TEST_DIR/config.json'))
+cfg['notification_style'] = 'standard'
+cfg['notification_title_script'] = 'exit 1'
+json.dump(cfg, open('$TEST_DIR/config.json', 'w'))
+"
+  run_peon '{"hook_event_name":"Stop","cwd":"/tmp/myproject","session_id":"s1","permission_mode":"default"}'
+  [ "$PEON_EXIT" -eq 0 ]
+  # Falls through to git/folder name — just verify it ran without crashing
+  [ -f "$TEST_DIR/terminal_notifier.log" ]
 }
 
 # ============================================================
