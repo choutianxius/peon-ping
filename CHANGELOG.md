@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.13.1 (2026-03-05)
+
+### Fixed
+- **`/peon-ping-rename` title lost in plan mode** — when accepting a plan or entering plan mode, the session name would revert to the git repo/folder name. Early-exit paths (unknown events, unknown `Notification` types, `PostToolUseFailure` for non-Bash tools, `SubagentStart`, compact `SessionStart`) now emit `PROJECT`/`STATUS` so the shell still sets the tab title even when no sound plays.
+
 ## v2.13.0 (2026-03-03)
 
 ### Added

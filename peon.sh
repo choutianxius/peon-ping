@@ -2644,6 +2644,9 @@ INPUT=$(cat)
 PAUSED=false
 [ -f "$PEON_DIR/.paused" ] && PAUSED=true
 
+# Capture TTY now (before stdin is consumed) so Python can store/read tty_names for rename persistence
+_PEON_HOOK_TTY="$(tty 2>/dev/null || true)"
+
 # --- Single Python call: config, event parsing, agent detection, category routing, sound picking ---
 # Consolidates 5 separate python3 invocations into one for ~120-200ms faster hook response.
 # Outputs shell variables consumed by the bash play/notify/title logic below.
@@ -2655,6 +2658,7 @@ config_path = '$CONFIG_PY'
 state_file = '$STATE_PY'
 peon_dir = '$PEON_DIR_PY'
 paused = '$PAUSED' == 'true'
+hook_tty = '$_PEON_HOOK_TTY'
 agent_modes = {'delegate'}
 state_dirty = False
 
@@ -2887,6 +2891,11 @@ if session_id:
     _sn_state = state.get('session_names', {}).get(session_id, '').strip()
     if _sn_state: project = re.sub(r'[^a-zA-Z0-9 ._-]', '', _sn_state[:50])
 
+# -0.5. TTY-based session name fallback — persists across /clear context resets in the same terminal
+if not project and hook_tty:
+    _sn_tty = state.get('tty_names', {}).get(hook_tty, '').strip()
+    if _sn_tty: project = re.sub(r'[^a-zA-Z0-9 ._-]', '', _sn_tty[:50])
+
 # 0. CLAUDE_SESSION_NAME env var (per-terminal session override)
 if not project:
     _sn = os.environ.get('CLAUDE_SESSION_NAME', '').strip()
@@ -2958,7 +2967,10 @@ msg_subtitle = ''
 if event == 'SessionStart':
     source = event_data.get('source', '')
     if source == 'compact':
-        # Compaction is mid-conversation — greeting makes no sense
+        # Compaction is mid-conversation — greeting makes no sense, but maintain title
+        print('PROJECT=' + q(project or ''))
+        print('STATUS=ready')
+        print('MARKER=')
         print('PEON_EXIT=true')
         sys.exit(0)
     category = 'session.start'
@@ -3031,6 +3043,10 @@ elif event == 'Notification':
         msg = project
         msg_subtitle = 'Question pending'
     else:
+        # Unknown notification type — maintain tab title (e.g. plan mode events)
+        print('PROJECT=' + q(project or ''))
+        print('STATUS=working')
+        print('MARKER=')
         print('PEON_EXIT=true')
         sys.exit(0)
 elif event == 'PermissionRequest':
@@ -3056,6 +3072,10 @@ elif event == 'PostToolUseFailure':
         category = 'task.error'
         status = 'error'
     else:
+        # Non-Bash tool failure — no sound, but maintain tab title
+        print('PROJECT=' + q(project or ''))
+        print('STATUS=working')
+        print('MARKER=')
         print('PEON_EXIT=true')
         sys.exit(0)
 elif event == 'SubagentStart':
@@ -3064,6 +3084,10 @@ elif event == 'SubagentStart':
     state_dirty = True
     os.makedirs(os.path.dirname(state_file) or '.', exist_ok=True)
     json.dump(state, open(state_file, 'w'))
+    # Maintain parent's tab title while subagent runs (no sound)
+    print('PROJECT=' + q(project or ''))
+    print('STATUS=working')
+    print('MARKER=')
     print('PEON_EXIT=true')
     sys.exit(0)
 elif event == 'PreCompact':
@@ -3090,7 +3114,10 @@ elif event == 'SessionEnd':
     print('PEON_EXIT=true')
     sys.exit(0)
 else:
-    # Unknown event — exit cleanly
+    # Unknown event (e.g. PreToolUse, PostToolUse, plan mode events) — no sound, but maintain tab title
+    print('PROJECT=' + q(project or ''))
+    print('STATUS=working')
+    print('MARKER=')
     print('PEON_EXIT=true')
     sys.exit(0)
 
@@ -3343,6 +3370,11 @@ if [ "${PEON_EXIT:-true}" = "true" ]; then
   # On session end, kill any lingering overlay popups (macOS only)
   if [ "${EVENT:-}" = "SessionEnd" ] && [ "$PLATFORM" = "mac" ]; then
     pkill -f "mac-overlay" 2>/dev/null || true
+  fi
+  # Maintain tab title even on suppressed events (plan mode, unknown events, subagent start).
+  # PROJECT is only emitted by paths that should maintain the title; agent/disabled paths omit it.
+  if [ -n "${PROJECT:-}" ] && [ "${EVENT:-}" != "SessionEnd" ]; then
+    printf '\033]0;%s\007' "${MARKER:-}${PROJECT}: ${STATUS:-working}" > /dev/tty 2>/dev/null || true
   fi
   exit 0
 fi
