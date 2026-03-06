@@ -1047,6 +1047,12 @@ eventHooks:
 ''' + peon_events
     with open(config_path, 'a') as f:
         f.write(hooks_block)
+elif 'events: []' in content or 'events:[]' in content:
+    # Empty events array — replace with our events
+    import re
+    content = re.sub(r'events:\s*\[\]', 'events:\n' + peon_events, content, count=1)
+    with open(config_path, 'w') as f:
+        f.write(content)
 else:
     # eventHooks exists — add rovodev.sh command to existing events,
     # or create new event entries for events that don't exist yet

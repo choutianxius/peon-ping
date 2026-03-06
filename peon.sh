@@ -959,6 +959,25 @@ if os.path.isdir(opencode_dir):
     else:
         ides.append(('OpenCode', opencode_dir, 'detected (not set up)'))
 
+# Rovo Dev CLI: check if hooks are registered in config.yml
+rovodev_dir = os.path.join(home, '.rovodev')
+rovodev_config = os.path.join(rovodev_dir, 'config.yml')
+rovodev_config_yaml = os.path.join(rovodev_dir, 'config.yaml')
+if os.path.isdir(rovodev_dir):
+    config_file = rovodev_config if os.path.isfile(rovodev_config) else rovodev_config_yaml if os.path.isfile(rovodev_config_yaml) else None
+    if config_file:
+        try:
+            with open(config_file) as f:
+                content = f.read()
+            if 'rovodev.sh' in content:
+                ides.append(('Rovo Dev CLI', rovodev_dir, 'installed'))
+            else:
+                ides.append(('Rovo Dev CLI', rovodev_dir, 'detected (not set up)'))
+        except Exception:
+            ides.append(('Rovo Dev CLI', rovodev_dir, 'detected'))
+    else:
+        ides.append(('Rovo Dev CLI', rovodev_dir, 'detected (not set up)'))
+
 # Gemini CLI: check if hooks are registered in settings.json
 gemini_dir = os.environ.get('GEMINI_CONFIG_DIR', os.path.join(home, '.gemini'))
 gemini_settings = os.path.join(gemini_dir, 'settings.json')

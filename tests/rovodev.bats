@@ -247,6 +247,25 @@ EOF
   teardown_install_env
 }
 
+@test "install: handles empty events array (events: [])" {
+  setup_install_env
+  mkdir -p "$INSTALL_HOME/.rovodev"
+  cat > "$INSTALL_HOME/.rovodev/config.yml" <<'EOF'
+eventHooks:
+  logFile: /Users/testuser/.rovodev/event_hooks.log
+  events: []
+EOF
+  bash "$CLONE_DIR/install.sh"
+  # events: [] should be replaced with actual events
+  ! grep -q 'events: \[\]' "$INSTALL_HOME/.rovodev/config.yml"
+  grep -q "rovodev.sh on_complete" "$INSTALL_HOME/.rovodev/config.yml"
+  grep -q "rovodev.sh on_error" "$INSTALL_HOME/.rovodev/config.yml"
+  grep -q "rovodev.sh on_tool_permission" "$INSTALL_HOME/.rovodev/config.yml"
+  # logFile preserved
+  grep -q "logFile:" "$INSTALL_HOME/.rovodev/config.yml"
+  teardown_install_env
+}
+
 @test "install: appends command to existing event, creates missing events" {
   setup_install_env
   mkdir -p "$INSTALL_HOME/.rovodev"
